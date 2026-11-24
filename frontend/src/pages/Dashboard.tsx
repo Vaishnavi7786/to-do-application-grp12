@@ -4,6 +4,16 @@ import { api } from "../api";
 import { Legend, StatCard, StatusBar, TaskRow } from "../components";
 import type { AiPlan, AiProvider, Task } from "../types";
 
+type ProductivityInsights = {
+  total_tasks: number;
+  completed_tasks: number;
+  pending_tasks: number;
+  in_progress_tasks: number;
+  completion_rate: number;
+  insight: string;
+  suggestions: string[];
+  provider: AiProvider;
+};
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [error, setError] = useState("");
@@ -15,6 +25,22 @@ export default function Dashboard() {
     try { setPlan(await api.aiPlan(provider)); } catch (e) { setPlan(null); setPlanErr(e instanceof Error ? e.message : "AI request failed."); }
     finally { setPlanBusy(false); }
   };
+  const [insights, setInsights] = useState<ProductivityInsights | null>(null);
+const [insightsBusy, setInsightsBusy] = useState(false);
+const [insightsErr, setInsightsErr] = useState("");
+
+const makeInsights = async () => {
+  setInsightsBusy(true);
+  setInsightsErr("");
+  try {
+    setInsights(await api.aiProductivityInsights());
+  } catch (e) {
+    setInsights(null);
+    setInsightsErr(e instanceof Error ? e.message : "AI request failed.");
+  } finally {
+    setInsightsBusy(false);
+  }
+};
   useEffect(() => { api.listTasks().then(setTasks).catch((e) => setError(e.message)); }, []);
 
   if (error) return <div className="error">{error}</div>;
